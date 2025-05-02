@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>채팅방 리스트</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.1.3/css/bootstrap.min.css" rel="stylesheet">
+    <link href="/stylee.css" rel="stylesheet">
+</head>
+
+<body>
+    <div class="container">
+        <div class="chat-room-list">
+            <h1 class="text-center mb-4">채팅방 리스트</h1>
+            <p class="text-muted">현재 사용자: <%= userID %>
+            </p>
+
+            <!-- 로그아웃 버튼 추가 -->
+            <div class="d-flex justify-content-end mb-3">
+                <form action="/logout" method="GET">
+                    <button type="submit" class="btn btn-danger">로그아웃</button>
+                </form>
+            </div>
+
+            <div class="list-group" id="chat-room-list">
+                <% for (let i=0; i < room.length; i++) { %>
+                    <div class="chat-room-item d-none">
+                        <form action="/room" method="POST">
+                            <input type="hidden" name="creatUserID" value="<%= room[i].creatUserID %>">
+                            <input type="hidden" name="userID" value="<%= userID %>">
+                            <button type="submit" class="chat-room-button">
+                                <!-- <%= room[i].creatUserID %> -->
+                                <%=i%> 번방
+                            </button>
+                        </form>
+                    </div>
+                    <% } %>
+            </div>
+
+            <!-- Pagination Controls -->
+            <nav aria-label="Page navigation" class="mt-4">
+                <ul class="pagination justify-content-center" id="pagination">
+                    <!-- Pagination items will be added here by JavaScript -->
+                </ul>
+            </nav>
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.1.3/js/bootstrap.bundle.min.js"></script>
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            const rooms = document.querySelectorAll(".chat-room-item");
+            const pagination = document.getElementById("pagination");
+            const itemsPerPage = 5;
+            const pageCount = Math.ceil(rooms.length / itemsPerPage);
+
+            function showPage(page) {
+                rooms.forEach((room, index) => {
+                    room.classList.add("d-none");
+                    if (index >= (page - 1) * itemsPerPage && index < page * itemsPerPage) {
+                        room.classList.remove("d-none");
+                    }
+                });
+            }
+
+            function createPagination() {
+                for (let i = 1; i <= pageCount; i++) {
+                    const li = document.createElement("li");
+                    li.classList.add("page-item");
+                    li.innerHTML = `<a class="page-link" href="#">${i}</a>`;
+                    li.addEventListener("click", (e) => {
+                        e.preventDefault();
+                        showPage(i);
+                        document.querySelectorAll(".page-item").forEach(item => item.classList.remove("active"));
+                        li.classList.add("active");
+                    });
+                    pagination.appendChild(li);
+                }
+                pagination.querySelector(".page-item").classList.add("active");
+            }
+
+            showPage(1); // Show the first page initially
+            createPagination(); // Initialize pagination
+        });
+    </script>
+</body>
+
+</html>

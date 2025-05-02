@@ -1,0 +1,30 @@
+body {
+  background-color: #f8f9fa;
+}
+
+.chat-room-list {
+  max-width: 600px;
+  margin: 2rem auto;
+  padding: 1rem;
+  background-color: white;
+  border-radius: 10px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.chat-room-item {
+  margin-bottom: 1rem;
+}
+
+.chat-room-button {
+  width: 100%;
+  text-align: left;
+  padding: 0.75rem 1rem;
+  border: none;
+  background-color: #e9ecef;
+  border-radius: 5px;
+  transition: background-color 0.2s;
+}
+
+.chat-room-button:hover {
+  background-color: #dee2e6;
+}

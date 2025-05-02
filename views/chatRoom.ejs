@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>채팅방</title>
+    <link href="/main.css" rel="stylesheet">
+
+</head>
+
+<body>
+    <div class="header">
+        <a href="/list?id=<%=userID%>"><button>리스트</button></a>
+        <div class="peopleNum"></div>
+        <!-- 로그아웃 버튼 추가 -->
+        <div class="d-flex justify-content-end">
+            <form action="/logout" method="GET">
+                <button type="submit" class="btn btn-danger" style="background-color: #dc3545;">로그아웃</button>
+            </form>
+        </div>
+    </div>
+
+
+    <div class="chat-container">
+        <%if(chat.length> 0){%>
+            <% for(let i=0; i < chat.length; i++){%>
+                <% if(chat[i].userID==userID){ %>
+                    <div class="chatMessage">
+                        <div class="my-profile-image" style="background-color:<%= chat[i].textColor%>;">
+
+                        </div>
+                        <div class="my-messages" style="color:<%= chat[i].textColor%>;">
+                            <%= chat[i].text%>
+                        </div>
+                    </div>
+                    <%} else {%>
+                        <div class="chatMessage">
+                            <div class="other-profile-image" style="background-color:<%= chat[i].textColor%>;">
+
+                            </div>
+                            <div class="other-messages" style="color:<%= chat[i].textColor%>;">
+                                <%= chat[i].text %>
+                            </div>
+                        </div>
+                        <%}}}%>
+    </div>
+    <% let
+        colors=['4CAF50','3498db','FF9800','FF5722','9C27B0','607D8B','E91E63','00BCD4','FFC107','795548','8BC34A','FFFFFF','000000']
+        %>
+
+        <div id="color-buttons">
+            <!-- 색상 선택 버튼 -->
+            <% for (let i=0; i < colors.length; i++) { %>
+                <div class="color-button" style="background-color: #<%= colors[i] %>;"
+                    onclick="changeBubbleColor('#<%= colors[i] %>')">
+                </div>
+                <p style="width: 10px;"></p>
+                <% } %>
+
+
+        </div>
+        <div class="input-messages">
+            <input class="chat-input" name="chat" placeholder="메시지를 입력하세요...">
+            <button class="send-btn">전송</button>
+
+            <!-- 랜덤페이지 이동 -->
+            <form id="next-form" action="/room/random" method="POST" style="display: inline;">
+                <input type="hidden" name="creatUserID" value="<%=room.creatUserID%>">
+                <input type="hidden" name="userID" value="<%=userID %>">
+            </form>
+        </div>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"
+            integrity="sha512-894YE6QWD5I59HgZOGReFYm4dnWc1Qt5NtvYSaNcOP+u1T9qYdvdihz0PPSiiqn/+/3e7Jo4EaG7TubfWGUrMQ=="
+            crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+        <script src="https://cdn.jsdelivr.net/npm/socket.io@4.7.2/client-dist/socket.io.min.js"></script>
+        <script>
+
+
+            // 글자색 변화
+            let header = $(".header")
+            let currentBubbleColor = 'black'
+            function changeBubbleColor(color) {
+                currentBubbleColor = color;
+                $(".chat-input").css('color', currentBubbleColor);
+                header.css('background-color', currentBubbleColor)
+                if (currentBubbleColor == '#FFFFFF') {
+                    header.css('color', '#000000')
+                } else {
+                    header.css('color', '#FFFFFF')
+                }
+                console.log(currentBubbleColor)
+            }
+
+            document.addEventListener("DOMContentLoaded", function () {
+
+
+
+                const socket = io() // 유저 웹소켓 연결
+                socket.emit('ask-join', '<%= room._id %>')
+                socket.on('room-size', (roomSize) => {
+                    console.log('인원수: ', roomSize)
+                })
+
+
+
+                // 메시지 보내기
+                document.querySelector('.send-btn').addEventListener('click', () => {
+                    let msg = document.querySelector('.chat-input').value
+                    document.querySelector('.chat-input').value = ''
+                    socket.emit('message', {
+                        text: msg,
+                        user: '<%=userID%>',
+                        roomID: '<%=room._id %>',
+                        room: '<%=room.creatUserID%>%> ',
+                        textColor: currentBubbleColor
+                    })
+                })
+
+                // enter키로 메시지 보내기
+                document.querySelector('.chat-input').addEventListener('keydown', function (event) {
+                    if (event.key === 'Enter') {
+                        let msg = document.querySelector('.chat-input').value
+                        document.querySelector('.chat-input').value = ''
+                        socket.emit('message', {
+                            text: msg,
+                            user: '<%=userID%>',
+                            roomID: '<%=room._id %>',
+                            textColor: currentBubbleColor,
+                        })
+                    }
+                })
+                // 메시지 받기
+                socket.on('msg', (msg) => {
+                    let 템플릿
+                    if (msg.user == '<%=userID%>') {
+                        console.log('내꺼')
+                        템플릿 = `
+                    <div class="chatMessage">
+                        <div class="my-profile-image" style="background-color:${msg.textColor};">
+                            
+                        </div>
+                        <div class="my-messages" style="color: ${msg.textColor}">
+                            <span>${msg.message}</span>
+                        </div>
+                        <div style="clear: both;"></div>
+                    </div>`;
+                    } else {
+                        console.log('남의꺼')
+                        템플릿 = `
+                    <div class="chatMessage">
+                        <div class="other-profile-image" style="background-color:${msg.textColor};">
+                            
+                        </div>
+                        <div class="other-messages" style="color: ${msg.textColor}">
+                            <span>${msg.message}</span>
+                        </div> 
+                        <div style="clear: both;"></div>
+                    </div>`;
+                    }
+                    let chatContainer = document.querySelector('.chat-container');
+                    chatContainer.insertAdjacentHTML('beforeend', 템플릿)
+                    chatContainer.scrollTop = chatContainer.scrollHeight;
+                })
+
+                // 자동 삭제
+                socket.on('delete-message', (data) => {
+                    console.log(data)
+                    document.querySelectorAll('.chatMessage')[0].remove()
+                    if (data.user == '<%=userID%>') {
+                        console.log('내꺼 삭제')
+                    } else {
+                        console.log('너꺼 삭제')
+                    }
+                })
+
+                socket.on('room-size', (data) => {
+                    let 템플릿 = `접속자${data}명`
+                    document.querySelector('.peopleNum').innerHTML = 템플릿
+                })
+
+                // 페이지이동 감지
+                window.addEventListener('beforeunload', function (event) {
+                    socket.emit('leave-page', '<%= room._id %>')
+                    // 페이지를 떠날 때 서버로 이동 감지 요청을 보냄
+                    fetch('/page-leave?roomID=<%=room._id%>&userID=<%=userID%>', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' }
+                    });
+
+                });
+
+
+                let 눌렀나 = false;
+                let 시작좌표 = 0;
+                let 변화량 = 0;
+                let 투명도 = 0;
+
+                const chatMessages = document.querySelector(".chat-messages");
+                const 컨테이너 = $('.chat-container')
+                // 드래그 핸들링 이벤트 설정
+                컨테이너.on("mousedown", function (event) {
+                    눌렀나 = true;
+                    시작좌표 = event.clientX;
+                    // console.log(시작좌표)
+                });
+
+                컨테이너.on("mousemove", function (event) {
+
+                    if (눌렀나) {
+                        컨테이너.css('transition', 'none')
+                        변화량 = 시작좌표 - event.clientX;
+
+                        if (변화량 < 300 && 변화량 > -300) {
+                            투명도 = -(1 / 180000) * 변화량 * 변화량 + 1;
+                            console.log(투명도);
+                            // console.log(변화량)
+                            컨테이너.css('transform', `translateX(${-변화량}px)`)
+                                .css('opacity', 투명도);
+                        }
+                    }
+                });
+
+                컨테이너.on("mouseup", function (event) {
+                    if (눌렀나) {
+                        // 변화량 = 시작좌표 - event.clientX;
+                        // console.log(변화량)
+
+                        if (변화량 > 200) {
+                            console.log('오른쪽으로 이동')
+                            alert('오른쪽 이동')
+                            moveRoom();
+                        } else if (변화량 < -200) {
+                            console.log('왼쪽으로 이동')
+                            alert('왼쪽 이동')
+                            moveRoom();
+                        } else {
+                            console.log('별로 이동안함')
+                            컨테이너.css('transform', `translateX(0px)`).css('transition', 'all 0.5s')
+                        }
+
+                        눌렀나 = false;
+                        시작좌표 = 0;
+                        변화량 = 0;
+                    }
+                });
+
+                function moveRoom() {
+                    console.log('이동')
+                    document.getElementById('next-form').submit();
+                }
+
+                // 모바일
+                컨테이너.on("touchstart", function (e) {
+                    눌렀나 = true;
+                    시작좌표 = e.touches[0].clientX;
+                });
+
+                컨테이너.on("touchmove", function (e) {
+
+                    if (눌렀나) {
+                        컨테이너.css('transition', 'none')
+                        변화량 = 시작좌표 - e.touches[0].clientX;
+
+                        if (변화량 < 300 && 변화량 > -300) {
+                            투명도 = -(1 / 180000) * 변화량 * 변화량 + 1;
+                            console.log(투명도);
+                            // console.log(변화량)
+                            컨테이너.css('transform', `translateX(${-변화량}px)`)
+                                .css('opacity', 투명도);
+                        }
+                    }
+                });
+
+                컨테이너.on("touchend", function (e) {
+                    if (눌렀나) {
+                        // 변화량 = 시작좌표 - event.clientX;
+                        // console.log(변화량)
+
+                        if (변화량 > 200) {
+                            console.log('오른쪽으로 이동')
+                            alert('오른쪽 이동')
+                            moveRoom();
+                        } else if (변화량 < -200) {
+                            console.log('왼쪽으로 이동')
+                            alert('왼쪽 이동')
+                            moveRoom();
+                        } else {
+                            console.log('별로 이동안함')
+                            컨테이너.css('transform', `translateX(0px)`).css('transition', 'all 0.5s')
+                        }
+
+                        눌렀나 = false;
+                        시작좌표 = 0;
+                        변화량 = 0;
+                    }
+                });
+            });
+
+        </script>
+</body>
+
+</html>
